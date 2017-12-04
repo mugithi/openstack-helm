@@ -1,0 +1,92 @@
+# Copyright 2017 The Openstack-Helm Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+force_bootstrap: false
+
+pod:
+  affinity:
+      anti:
+        type:
+          default: preferredDuringSchedulingIgnoredDuringExecution
+        topologyKey:
+          default: kubernetes.io/hostname
+  replicas:
+    server: 3
+  lifecycle:
+    disruption_budget:
+      mariadb:
+        min_available: 0
+  resources:
+    enabled: false
+    server:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+      requests:
+        memory: "128Mi"
+        cpu: "500m"
+
+images:
+  tags:
+    mariadb: docker.io/mariadb:10.1.23
+  pull_policy: IfNotPresent
+
+volume:
+  enabled: true
+  class_name: general
+  size: 5Gi
+
+labels:
+  node_selector_key: openstack-control-plane
+  node_selector_value: enabled
+
+database:
+  config_override: null
+  # Any configuration here will override the base config.
+  # config_override: |-
+  #   [mysqld]
+  #   wsrep_slave_threads=1
+
+resources:
+  enabled: false
+  server:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "1024Mi"
+      cpu: "2000m"
+
+# typically overriden by environmental
+# values, but should include all endpoints
+# required by this chart
+endpoints:
+  cluster_domain_suffix: ospod.dasher.com
+  oslo_db:
+    auth:
+      admin:
+        username: root
+        password: password
+    hosts:
+      default: mariadb
+      discovery: mariadb-discovery
+    host_fqdn_override:
+      default: null
+    path: null
+    scheme: mysql+pymysql
+    port:
+      mysql:
+        default: 3306
+      wsrep:
+        default: 4567

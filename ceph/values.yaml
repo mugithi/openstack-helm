@@ -1,0 +1,494 @@
+# Copyright 2017 The Openstack-Helm Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+deployment:
+  ceph: true
+  storage_secrets: true
+  client_secrets: true
+  rbd_provisioner: true
+  rgw_keystone_user_and_endpoints: false
+
+images:
+  tags:
+    ks_user: docker.io/kolla/ubuntu-source-heat-engine:3.0.3
+    ks_service: docker.io/kolla/ubuntu-source-heat-engine:3.0.3
+    ks_endpoints: docker.io/kolla/ubuntu-source-heat-engine:3.0.3
+    ceph_bootstrap: quay.io/attcomdev/ceph-daemon:tag-build-master-jewel-ubuntu-16.04
+    dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.2.1
+    ceph_daemon: quay.io/attcomdev/ceph-daemon:tag-build-master-jewel-ubuntu-16.04
+    ceph_config_helper: docker.io/port/ceph-config-helper:v1.7.5
+    ceph_rbd_provisioner: quay.io/external_storage/rbd-provisioner:v0.1.1
+  pull_policy: "IfNotPresent"
+
+labels:
+  jobs:
+    node_selector_key: openstack-control-plane
+    node_selector_value: enabled
+  mon:
+    node_selector_key: ceph-mon
+    node_selector_value: enabled
+  mds:
+    node_selector_key: ceph-mds
+    node_selector_value: enabled
+  osd:
+    node_selector_key: ceph-osd
+    node_selector_value: enabled
+  rgw:
+    node_selector_key: ceph-rgw
+    node_selector_value: enabled
+
+pod:
+  dns_policy: "ClusterFirstWithHostNet"
+  replicas:
+    rgw: 1
+    mon_check: 1
+    rbd_provisioner: 2
+  affinity:
+      anti:
+        type:
+          default: preferredDuringSchedulingIgnoredDuringExecution
+        topologyKey:
+          default: kubernetes.io/hostname
+  resources:
+    enabled: false
+    osd:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1024Mi"
+        cpu: "1000m"
+    mds:
+      requests:
+        memory: "10Mi"
+        cpu: "250m"
+      limits:
+        memory: "50Mi"
+        cpu: "500m"
+    mon:
+      requests:
+        memory: "50Mi"
+        cpu: "250m"
+      limits:
+        memory: "100Mi"
+        cpu: "500m"
+    mon_check:
+      requests:
+        memory: "5Mi"
+        cpu: "250m"
+      limits:
+        memory: "50Mi"
+        cpu: "500m"
+    rgw:
+      requests:
+        memory: "5Mi"
+        cpu: "250m"
+      limits:
+        memory: "50Mi"
+        cpu: "500m"
+    rbd_provisioner:
+      requests:
+        memory: "5Mi"
+        cpu: "250m"
+      limits:
+        memory: "50Mi"
+        cpu: "500m"
+    jobs:
+      bootstrap:
+        limits:
+          memory: "1024Mi"
+          cpu: "2000m"
+        requests:
+          memory: "128Mi"
+          cpu: "500m"
+      secret_provisioning:
+        limits:
+          memory: "1024Mi"
+          cpu: "2000m"
+        requests:
+          memory: "128Mi"
+          cpu: "500m"
+      ks_endpoints:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "1024Mi"
+          cpu: "2000m"
+      ks_service:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "1024Mi"
+          cpu: "2000m"
+      ks_user:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "1024Mi"
+          cpu: "2000m"
+
+secrets:
+  keyrings:
+    mon: ceph-mon-keyring
+    mds: ceph-bootstrap-mds-keyring
+    osd: ceph-bootstrap-osd-keyring
+    rgw: ceph-bootstrap-rgw-keyring
+    admin: ceph-client-admin-keyring
+  identity:
+    admin: ceph-keystone-admin
+    user: ceph-keystone-user
+    user_rgw: ceph-keystone-user-rgw
+
+network:
+  public: 192.168.0.0/16
+  cluster: 192.168.0.0/16
+  port:
+    mon: 6789
+    rgw: 8088
+
+conf:
+  rgw_ks:
+    config:
+      rgw_keystone_api_version: 3
+      rgw_keystone_accepted_roles: "admin, _member_"
+      rgw_keystone_implicit_tenants: true
+      rgw_s3_auth_use_keystone: true
+  ceph:
+    override:
+    append:
+    config:
+      global:
+        # auth
+        cephx: true
+        cephx_require_signatures: false
+        cephx_cluster_require_signatures: true
+        cephx_service_require_signatures: false
+
+        max_open_files: 131072
+        osd_pool_default_pg_num: 128
+        osd_pool_default_pgp_num: 128
+        osd_pool_default_size: 3
+        osd_pool_default_min_size: 1
+        mon_osd_full_ratio: .95
+        mon_osd_nearfull_ratio: .85
+        mon_host: null
+      mon:
+        mon_osd_down_out_interval: 600
+        mon_osd_min_down_reporters: 4
+        mon_clock_drift_allowed: .15
+        mon_clock_drift_warn_backoff: 30
+        mon_osd_report_timeout: 300
+      osd:
+        journal_size: 100
+        osd_mkfs_type: xfs
+        osd_mkfs_options_xfs: -f -i size=2048
+        osd_mon_heartbeat_interval: 30
+        osd_max_object_name_len: 256
+        #crush
+        osd_pool_default_crush_rule: 0
+        osd_crush_update_on_start: true
+        osd_crush_chooseleaf_type: 1
+        #backend
+        osd_objectstore: filestore
+        #performance tuning
+        filestore_merge_threshold: 40
+        filestore_split_multiple: 8
+        osd_op_threads: 8
+        filestore_op_threads: 8
+        filestore_max_sync_interval: 5
+        osd_max_scrubs: 1
+        #recovery tuning
+        osd_recovery_max_active: 5
+        osd_max_backfills: 2
+        osd_recovery_op_priority: 2
+        osd_client_op_priority: 63
+        osd_recovery_max_chunk: 1048576
+        osd_recovery_threads: 1
+        #ports
+        ms_bind_port_min: 6800
+        ms_bind_port_max: 7100
+      client:
+        rbd_cache_enabled: true
+        rbd_cache_writethrough_until_flush: true
+        rbd_default_features: "1"
+      mds:
+        mds_cache_size: 100000
+
+dependencies:
+  mon:
+    jobs:
+    service:
+  osd:
+    jobs:
+    services:
+    - service: ceph_mon
+      endpoint: internal
+  moncheck:
+    jobs:
+    services:
+    - service: ceph_mon
+      endpoint: internal
+  rgw:
+    jobs:
+    services:
+    - service: ceph_mon
+      endpoint: internal
+  mds:
+    jobs:
+    services:
+    - service: ceph_mon
+      endpoint: internal
+  bootstrap:
+    jobs:
+    services:
+    - service: ceph_mon
+      endpoint: internal
+  rbd_provisioner:
+    services:
+    - service: ceph_mon
+      endpoint: internal
+  ks_user:
+    services:
+    - service: identity
+      endpoint: internal
+  ks_service:
+    services:
+    - service: identity
+      endpoint: internal
+  ks_endpoints:
+    jobs:
+    - ceph-ks-service
+    services:
+    - service: identity
+      endpoint: internal
+
+ceph:
+  rgw_keystone_auth: false
+  enabled:
+    mds: true
+    rgw: true
+  storage:
+    osd_directory: /var/lib/openstack-helm/ceph/osd
+    var_directory: /var/lib/openstack-helm/ceph/ceph
+    mon_directory: /var/lib/openstack-helm/ceph/mon
+
+# There are two options for Ceph Storage: Device or Directory
+
+#Option 1: Device
+# the following illustrates the various ways to specify
+# OSDs and journals.  In the example system, we have
+# 3 disks for OSDs, one at /dev/sdd and the others
+# at SCSI IDs 2:0.0.5 and 2:0.0.6.  Journals for these
+# OSDs are at /dev/sde1 and partitions 1 and 2 of
+# scsi@2:0.0.4 respectively.
+#
+# OSD Devices and journals may be specified either as paths
+# into /dev or as SCSI IDs; journals may additionally have
+# a partition specified (this is not currently supported for
+# OSDs).
+#
+# OSD Devices and journals may be specified either as paths
+# into /dev or as SCSI IDs; journals may additionally have
+# a partition specified (this is not currently supported for
+# OSDs).
+#
+# Care should be taken when specifying a device here; /dev
+# paths and SCSI IDs can change across reboots, rendering
+# entries in this list invalid.  Also, specification of a
+# device for Ceph use can result in loss of existing data
+# on the device.
+#
+# To instantiate an OSD pod on a particular node, the node
+# must have two labels:
+#    ceph-osd=enabled
+# and
+#    cephosd-device-{name}=enabled
+# where {name} is a name: value from this map.
+#
+# See the installation documenation for more information.
+block_devices:
+#  - name: dev-sdf
+#    device: /dev/sdf
+#    type: device
+#    journal: /dev/sdb1
+#  - name: dev-sdg
+#    device: /dev/sdg
+#    type: device
+#    journal: /dev/sdb2
+#  - name: dev-sdh
+#    device: /dev/sdh
+#    type: device
+#    journal: /dev/sdb3
+
+  - name: scsi-0-0.0.5
+    device: scsi@0:0:5:0
+    type: device
+    journal:
+      device: scsi@0:0:1:0
+      partition: 1
+
+  - name: scsi-0-0.0.6
+    device: scsi@0:0:6:0
+    type: device
+    journal:
+      device: scsi@0:0:1:0
+      partition: 2
+
+  - name: scsi-0-0.0.7
+    device: scsi@0:0:7:0
+    type: device
+    journal:
+      device: scsi@0:0:1:0
+      partition: 3
+
+#   - name: scsi-2-0.0.6
+#     device: scsi@2:0.0.6
+#     type: device
+#     journal:
+#       device: scsi@2:0.0.4
+#       partition: 2
+
+#Option 2: Directory
+# You may specify directory for Ceph Storage.
+# In following example:
+# Specify OSD directory as - device: /var/lib/ceph/osd
+# Specify Journal directory under journal as - device: /var/lib/ceph/journal
+# Specify Type under for Directory as - type: directory
+# Specify lable as - name: var-lib-ceph-osd. This "var-lib-ceph-osd" name also
+# needs to be added to CEPH_OSD_DIRECTORY_DEFAULT_LABELS in vars.sh as
+# export CEPH_OSD_DIRECTORY_DEFAULT_LABELS=
+#        ${CEPH_DIRECTORY_OSD_DEFAULT_LABELS:="var-lib-ceph-osd"}
+# This name "var-lib-ceph-osd" will be used to label nodes as
+# ceph-osd-{type}-{name}=enabled which will result in node label
+# ceph-osd-directory-var-lib-ceph-osd=enabled
+#block_devices:
+#  - name: var-lib-ceph-osd
+#    device: /var/lib/ceph/osd
+#    type: directory
+#    journal:
+#      device: /var/lib/ceph/journal
+#    zap: '1'
+
+bootstrap:
+  enabled: false
+  script: |
+    ceph -s
+    function ensure_pool () {
+      ceph osd pool stats $1 || ceph osd pool create $1 $2
+    }
+    ensure_pool volumes 8
+
+# if you change provision_storage_class to false
+# it is presumed you manage your own storage
+# class definition externally
+storageclass:
+  provision_storage_class: true
+  provisioner: ceph.com/rbd
+  name: general
+  monitors: null
+  pool: rbd
+  admin_id: admin
+  admin_secret_name: pvc-ceph-conf-combined-storageclass
+  admin_secret_namespace: ceph
+  user_id: admin
+  user_secret_name: pvc-ceph-client-key
+
+endpoints:
+  cluster_domain_suffix: ospod.dasher.com
+  identity:
+    name: keystone
+    namespace: null
+    auth:
+      admin:
+        region_name: RegionOne
+        username: admin
+        password: password
+        project_name: admin
+        user_domain_name: default
+        project_domain_name: default
+      user:
+        role: admin
+        region_name: RegionOne
+        username: swift
+        password: password
+        project_name: service
+        user_domain_name: default
+        project_domain_name: default
+    hosts:
+      default: keystone-api
+      public: keystone
+    host_fqdn_override:
+      default: null
+    path:
+      default: /v3
+    scheme:
+      default: http
+    port:
+      admin:
+        default: 35357
+      api:
+        default: 80
+  object_store:
+    name: swift
+    namespace: null
+    hosts:
+      default: ceph-rgw
+    host_fqdn_override:
+      default: null
+    path:
+      default: /swift/v1
+    scheme:
+      default: http
+    port:
+      api:
+        default: 8088
+  ceph_mon:
+    namespace: null
+    hosts:
+      default: ceph-mon
+    host_fqdn_override:
+      default: null
+    port:
+      mon:
+        default: 6789
+
+
+manifests:
+  configmap_bin_clients: true
+  configmap_bin_ks: true
+  configmap_bin: true
+  configmap_etc: true
+  configmap_templates: true
+  daemonset_mon: true
+  daemonset_osd: true
+  deployment_mds: true
+  deployment_moncheck: true
+  deployment_rbd_provisioner: true
+  deployment_rgw: true
+  job_bootstrap: true
+  job_keyring: true
+  job_ks_endpoints: true
+  job_ks_service: true
+  job_ks_user: true
+  job_namespace_client_key_cleaner: true
+  job_namespace_client_key: true
+  job_storage_admin_keys: true
+  secret_keystone_rgw: true
+  secret_keystone: true
+  service_mon: true
+  service_rgw: true
+  storageclass: true
