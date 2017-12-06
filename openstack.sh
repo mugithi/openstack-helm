@@ -12,9 +12,10 @@ kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-adm
 # Disable RBACK
 kubectl apply -f https://raw.githubusercontent.com/openstack/openstack-helm/master/tools/kubeadm-aio/assets/opt/rbac/dev.yaml
 
+# Init helm
+helm init 
 
 # Serve local helm charts
-
 helm serve &
 helm repo add local http://localhost:8879/charts
 make
