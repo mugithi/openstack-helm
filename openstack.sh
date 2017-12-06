@@ -1,4 +1,5 @@
-#!/bin/bash +x 
+#!/bin/bash  
+set -x  
 
 # Create a Tiller Account
 kubectl create serviceaccount --namespace kube-system tiller
@@ -13,12 +14,17 @@ kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-adm
 kubectl apply -f https://raw.githubusercontent.com/openstack/openstack-helm/master/tools/kubeadm-aio/assets/opt/rbac/dev.yaml
 
 # Init helm
-sudo helm init 
+helm init 
 
 # Serve local helm charts
-sudo helm serve &
-sudo helm repo add local http://localhost:8879/charts
-sudo make
+helm serve &
+
+wait 2 
+# Serve add repo charts
+helm repo add local http://localhost:8879/charts
+wait 2 
+
+make -C ${PWD}
 
 
 # Label Nodes roles
