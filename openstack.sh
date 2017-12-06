@@ -4,7 +4,7 @@
 kubectl create serviceaccount --namespace kube-system tiller
 kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
 kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'      
-helm init --service-account tiller --upgrade
+sudo helm init --service-account tiller --upgrade
 
 # Create cluster role binding
 kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
@@ -13,12 +13,12 @@ kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-adm
 kubectl apply -f https://raw.githubusercontent.com/openstack/openstack-helm/master/tools/kubeadm-aio/assets/opt/rbac/dev.yaml
 
 # Init helm
-helm init 
+sudo helm init 
 
 # Serve local helm charts
-helm serve &
-helm repo add local http://localhost:8879/charts
-make
+sudo helm serve &
+sudo helm repo add local http://localhost:8879/charts
+sudo make
 
 
 # Label Nodes roles
