@@ -14,7 +14,8 @@ kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-adm
 kubectl apply -f https://raw.githubusercontent.com/openstack/openstack-helm/master/tools/kubeadm-aio/assets/opt/rbac/dev.yaml
 
 # Init helm
-helm init
+helm init --service-account tiller --upgrade
 
 # Serve local helm charts
 helm serve &
+wait 10
