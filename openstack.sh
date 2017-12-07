@@ -2,28 +2,28 @@
 set -x  
 
 # Create a Tiller Account
-sudo kubectl create serviceaccount --namespace kube-system tiller
-sudo kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-sudo kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'      
-sudo helm init --service-account tiller --upgrade
+kubectl create serviceaccount --namespace kube-system tiller
+kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'      
+helm init --service-account tiller --upgrade
 
 # Create cluster role binding
-sudo kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 
 # Disable RBACK
-sudo kubectl apply -f https://raw.githubusercontent.com/openstack/openstack-helm/master/tools/kubeadm-aio/assets/opt/rbac/dev.yaml
+kubectl apply -f https://raw.githubusercontent.com/openstack/openstack-helm/master/tools/kubeadm-aio/assets/opt/rbac/dev.yaml
 
 # Init helm
-sudo helm init 
+helm init 
 
 # Serve local helm charts
-sudo helm serve &
+helm serve &
 
 wait 2 
 # Serve add repo charts
-sudo helm repo add local http://localhost:8879/charts
+helm repo add local http://localhost:8879/charts
 wait 2 
-sudo make -C ${PWD}
+make -C ${PWD}
 
 
 # Label Nodes roles
