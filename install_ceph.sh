@@ -7,7 +7,7 @@ export OSD_PUBLIC_NETWORK=10.20.44.0/24
 export CEPH_RGW_KEYSTONE_ENABLED=true
 
 
-sudo helm install --namespace=ceph ${PWD}/ceph --name=ceph  \
+sudo helm install --namespace=ceph /openstack-helm/ceph --name=ceph  \
 --set endpoints.identity.namespace=openstack \
 --set endpoints.object_store.namespace=ceph \
 --set endpoints.ceph_mon.namespace=ceph \
