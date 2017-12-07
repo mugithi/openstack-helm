@@ -2,29 +2,28 @@
 set -x  
 
 # Create a Tiller Account
-kubectl create serviceaccount --namespace kube-system tiller
-kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'      
+sudo kubectl create serviceaccount --namespace kube-system tiller
+sudo kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+sudo kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'      
 sudo helm init --service-account tiller --upgrade
 
 # Create cluster role binding
-kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+sudo kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 
 # Disable RBACK
-kubectl apply -f https://raw.githubusercontent.com/openstack/openstack-helm/master/tools/kubeadm-aio/assets/opt/rbac/dev.yaml
+sudo kubectl apply -f https://raw.githubusercontent.com/openstack/openstack-helm/master/tools/kubeadm-aio/assets/opt/rbac/dev.yaml
 
 # Init helm
-helm init 
+sudo helm init 
 
 # Serve local helm charts
-helm serve &
+sudo helm serve &
 
 wait 2 
 # Serve add repo charts
-helm repo add local http://localhost:8879/charts
+sudo helm repo add local http://localhost:8879/charts
 wait 2 
-
-make -C ${PWD}
+sudo make -C ${PWD}
 
 
 # Label Nodes roles
@@ -62,7 +61,7 @@ export OSD_PUBLIC_NETWORK=10.20.44.0/24
 export CEPH_RGW_KEYSTONE_ENABLED=true
 
 
-helm install --namespace=ceph ${PWD}/ceph --name=ceph  \
+sudo helm install --namespace=ceph ${PWD}/ceph --name=ceph  \
 --set endpoints.identity.namespace=openstack \
 --set endpoints.object_store.namespace=ceph \
 --set endpoints.ceph_mon.namespace=ceph \
