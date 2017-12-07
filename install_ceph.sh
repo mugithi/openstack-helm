@@ -1,5 +1,6 @@
 #!/bin/bash
 set -x 
+wait 10
 
 #Label Network
 export OSD_CLUSTER_NETWORK=10.20.44.0/24
