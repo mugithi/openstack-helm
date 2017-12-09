@@ -85,8 +85,18 @@ helm install --namespace=openstack ${DIR}/ceph --name=ceph-openstack-config \
   --set deployment.storage_secrets=false \
   --set deployment.ceph=false \
   --set deployment.rbd_provisioner=false \
+  --set deployment.client_secrets=true \
+  --set deployment.rgw_keystone_user_and_endpoints=false
 waitForStatusOpenstack openstack ceph
                                                                                                                                                                                                                     1,1           Top
+echo "installing mariadb"
+helm install --name=mariadb ${DIR}/mariadb --namespace=openstack
+waitForStatusOpenstack openstack mariadb
+
+echo "insalling memcached"
+helm install --name=memcached ${DIR}/memcached --namespace=openstack
+waitForStatusOpenstack openstack memcached
+
 echo "Installling rabbitmq"
 helm install --name=rabbitmq ${DIR}/rabbitmq --namespace=openstack
 waitForStatusOpenstack openstack rabbitmq
@@ -102,6 +112,12 @@ waitForStatusOpenstack openstack libvirt
 echo "installing openvswitch"
 helm install --name=openvswitch ${DIR}/openvswitch --namespace=openstack
 waitForStatusOpenstack openstack openvswitch
+
+echo "installing keystone"
+helm install --namespace=openstack --name=keystone ${DIR}/keystone \
+  --set pod.replicas.api=2
+witForStatusOpenstack openstack keystone
+
 
 helm install --namespace=openstack ${DIR}/ceph --name=radosgw-openstack \
   --set endpoints.identity.namespace=openstack \
@@ -140,6 +156,16 @@ echo "installing neutron"
 helm install --namespace=openstack --name=neutron ${DIR}/neutron \
   --set pod.replicas.server=2
 waitForStatusOpenstack openstack neutron
+
+helm install --namespace=openstack --name=nova ${DIR}/nova \
+  --set pod.replicas.api_metadata=2 \
+  --set pod.replicas.osapi=2 \
+  --set pod.replicas.conductor=2 \
+  --set pod.replicas.consoleauth=2 \
+  --set pod.replicas.scheduler=2 \
+  --set pod.replicas.novncproxy=2
+itForStatusOpenstack openstack nova
+
 
 echo "intalling cinder"
 helm install --namespace=openstack --name=cinder ${DIR}/cinder \
