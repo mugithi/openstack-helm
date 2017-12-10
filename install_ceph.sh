@@ -1,5 +1,5 @@
 #!/bin/bash
-
+#set -x 
 #Label Network
 export OSD_CLUSTER_NETWORK=10.20.44.0/24
 export OSD_PUBLIC_NETWORK=10.20.44.0/24
@@ -13,7 +13,7 @@ waitForStatusOpenstack () {
   for (( i=$START; i<=$END; i++))
   do 
     HEALTH=`./waitForStatusOpenstack.py`
-    if [ $HEALTH == "DEPLOY_COMPLETED" ]; 
+    if [ $HEALTH == "DEPLOY_COMPLETE" ]; 
     then 
        break
     fi
@@ -32,7 +32,7 @@ waitForStatusCeph () {
   for (( i=$START; i<=$END; i++))
   do
     HEALTH=`./waitForStatusCeph.py`
-    if [ $HEALTH == "DEPLOY_COMPLETED" ];
+    if [ $HEALTH == "DEPLOY_COMPLETE" ];
     then
        break
     fi
@@ -96,6 +96,11 @@ waitForStatusOpenstack openstack mariadb
 echo "insalling memcached"
 helm install --name=memcached ${DIR}/memcached --namespace=openstack
 waitForStatusOpenstack openstack memcached
+
+
+echo "insalling etcd-rabbitmq"
+helm install --name=etcd-rabbitmq ${DIR}/etcd --namespace=openstack
+waitForStatusOpenstack openstack etcd-rabbitmq
 
 echo "Installling rabbitmq"
 helm install --name=rabbitmq ${DIR}/rabbitmq --namespace=openstack
