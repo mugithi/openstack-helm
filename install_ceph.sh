@@ -12,7 +12,7 @@ waitForStatusOpenstack () {
   HEALTH="DEPLOY_FAILED"
   for (( i=$START; i<=$END; i++))
   do 
-    HEALTH=`./waitForStatusOpenstack.py`
+    HEALTH=`python /openstack-helm/waitForStatusOpenstack.py`
     if [ $HEALTH == "DEPLOY_COMPLETE" ]; 
     then 
        break
@@ -31,7 +31,7 @@ waitForStatusCeph () {
   HEALTH="DEPLOY_FAILED"
   for (( i=$START; i<=$END; i++))
   do
-    HEALTH=`./waitForStatusCeph.py`
+    HEALTH=`python /openstack-helm/waitForStatusCeph.py`
     if [ $HEALTH == "DEPLOY_COMPLETE" ];
     then
        break
@@ -157,6 +157,12 @@ echo "intalling heat"
 helm install --namespace=openstack --name=heat ${DIR}/heat
 waitForStatusOpenstack openstack heat
 
+
+echo "installing neutron"
+helm install --namespace=openstack --name=neutron ${DIR}/neutron \
+  --set pod.replicas.server=2
+
+
 echo "installing nova"
 helm install --namespace=openstack --name=nova ${DIR}/nova \
   --set pod.replicas.api_metadata=2 \
@@ -167,10 +173,6 @@ helm install --namespace=openstack --name=nova ${DIR}/nova \
   --set pod.replicas.novncproxy=2
 waitForStatusOpenstack openstack nova
 
-echo "installing neutron"
-helm install --namespace=openstack --name=neutron ${DIR}/neutron \
-  --set pod.replicas.server=2
-waitForStatusOpenstack openstack neutron
 
 
 echo "intalling cinder"
