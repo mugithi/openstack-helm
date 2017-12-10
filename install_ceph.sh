@@ -87,7 +87,7 @@ helm install --namespace=openstack ${DIR}/ceph --name=ceph-openstack-config \
   --set deployment.rbd_provisioner=false \
   --set deployment.client_secrets=true \
   --set deployment.rgw_keystone_user_and_endpoints=false
-waitForStatusOpenstack openstack ceph
+waitForStatusOpenstack openstack ceph-openstack-config
                                                                                                                                                                                                                     1,1           Top
 echo "installing mariadb"
 helm install --name=mariadb ${DIR}/mariadb --namespace=openstack
