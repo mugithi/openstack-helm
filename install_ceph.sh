@@ -1,5 +1,5 @@
 #!/bin/bash
-#set -x 
+set -x 
 #Label Network
 export OSD_CLUSTER_NETWORK=10.20.44.0/24
 export OSD_PUBLIC_NETWORK=10.20.44.0/24
@@ -157,11 +157,7 @@ echo "intalling heat"
 helm install --namespace=openstack --name=heat ${DIR}/heat
 waitForStatusOpenstack openstack heat
 
-echo "installing neutron"
-helm install --namespace=openstack --name=neutron ${DIR}/neutron \
-  --set pod.replicas.server=2
-waitForStatusOpenstack openstack neutron
-
+echo "installing nova"
 helm install --namespace=openstack --name=nova ${DIR}/nova \
   --set pod.replicas.api_metadata=2 \
   --set pod.replicas.osapi=2 \
@@ -169,7 +165,12 @@ helm install --namespace=openstack --name=nova ${DIR}/nova \
   --set pod.replicas.consoleauth=2 \
   --set pod.replicas.scheduler=2 \
   --set pod.replicas.novncproxy=2
-itForStatusOpenstack openstack nova
+waitForStatusOpenstack openstack nova
+
+echo "installing neutron"
+helm install --namespace=openstack --name=neutron ${DIR}/neutron \
+  --set pod.replicas.server=2
+waitForStatusOpenstack openstack neutron
 
 
 echo "intalling cinder"
