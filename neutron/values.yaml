@@ -74,7 +74,7 @@ network:
   # Tunnel interface will be used for VXLAN tunneling. If null
   # (default) there is a fallback mechanism to search for interface
   # with default routing.
-    external: null
+    external: eno1.41
     tunnel: null
   # auto_bridge_add is a table of "bridge: interface" pairs, by
   # default empty
